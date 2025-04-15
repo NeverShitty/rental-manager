@@ -1,107 +1,196 @@
-# ARIBIA LLC Rental Management Portal Architecture
+# ARIBIA Rental Portal Architecture
 
 ## System Overview
 
-The Rental Management Portal is a full-stack application built to manage properties, tenants, financial data, and integrations with external services. It uses a modern React frontend with a Node.js/Express backend, connecting to a PostgreSQL database.
+The ARIBIA Rental Management Portal is designed as a modern web application with a React frontend and Node.js backend. The architecture follows a service-oriented approach with clear separation of concerns and integration with multiple third-party services.
 
-## Tech Stack
+## Architecture Diagram
 
-- **Frontend**: React with TypeScript, Tailwind CSS, shadcn UI component library
-- **Backend**: Node.js with Express
-- **Database**: PostgreSQL with Drizzle ORM
-- **API Integrations**: 
-  - DoorLoop (property management)
-  - Wave (accounting)
-  - HubSpot (CRM/leads)
-  - Microsoft 365 (emails/documents)
-  - Mercury Bank (financial)
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    ARIBIA Rental Portal                          │
+├─────────────┬─────────────────────────────┬────────────────────┤
+│             │                             │                    │
+│  Property   │        Tenant               │    Admin           │
+│  Manager    │        Portal               │    Dashboard       │
+│  Dashboard  │                             │                    │
+│             │                             │                    │
+├─────────────┴─────────────────────────────┴────────────────────┤
+│                                                                 │
+│                       Application Core                          │
+│                                                                 │
+├─────────────┬─────────────────────────────┬────────────────────┤
+│             │                             │                    │
+│ User &      │     Property                │   Financial        │
+│ Auth        │     Management              │   Management       │
+│ Services    │     Services                │   Services         │
+│             │                             │                    │
+├─────────────┼─────────────────────────────┼────────────────────┤
+│             │                             │                    │
+│ Document    │     Maintenance             │   Reporting        │
+│ Management  │     Management              │   Services         │
+│ Services    │     Services                │                    │
+│             │                             │                    │
+├─────────────┴─────────────────────────────┴────────────────────┤
+│                                                                 │
+│                   Integration Layer                             │
+│                                                                 │
+├─────────┬───────────┬────────────┬───────────┬─────────────────┤
+│         │           │            │           │                 │
+│ DoorLoop│   Wave    │  HubSpot   │ Microsoft │   Mercury       │
+│   API   │    API    │    API     │  365 API  │    Bank API     │
+│         │           │            │           │                 │
+└─────────┴───────────┴────────────┴───────────┴─────────────────┘
+```
 
-## Core Architecture
+## Component Architecture
 
-The application follows a standard client-server architecture with the following key components:
+### Frontend
 
-### Client-Side Architecture
-- React application using functional components and hooks
-- Component hierarchy with UI components and page components
-- State management using React Query for server state
-- Authentication using session-based auth with Passport.js
-- Routing with Wouter
+The frontend is built with React and uses the following main components:
 
-### Server-Side Architecture
-- Express server with RESTful API endpoints
-- Authentication middleware using Passport.js
-- Storage layer abstracting database operations
-- Service layer for external API integrations
-- Middleware for request validation and error handling
+1. **User Interface Layer**
+   - Property Manager Dashboard
+   - Tenant Portal
+   - Admin Dashboard
+   - Shared UI components (navigation, forms, tables)
 
-### Database Architecture
-- PostgreSQL database with the following key tables:
-  - users
-  - properties
-  - tenants
-  - maintenanceRequests
-  - transactions
-  - businessAccounts
-  - businessRelationships
-  - businessOwners
-  - businessTaxYears
-  - mercuryCredentials
-  - mercuryAccounts
+2. **State Management**
+   - React Query for server state
+   - Context API for application state
+   - Form state with React Hook Form
 
-## Component Structure
+3. **Routing**
+   - Wouter for navigation
+   - Protected routes based on user roles
 
-### Frontend Components
-- UI Components (inputs, buttons, cards, etc.)
-- Layout Components (dashboard layout, sidebar, etc.)
-- Feature Components (property list, tenant management, etc.)
-- Integration Components (service connectors, API forms, etc.)
-- Page Components (route-level components)
+### Backend
 
-### Backend Components
-- Routes (API endpoints)
-- Services (business logic and external API integration)
-- Storage (database access)
-- Auth (authentication and authorization)
-- Middleware (validation, error handling, etc.)
+The backend is built with Node.js/Express and follows this structure:
 
-## API Design
+1. **API Layer**
+   - RESTful endpoints
+   - Request validation
+   - Response formatting
+   - Authentication middleware
 
-The backend exposes RESTful APIs that follow these patterns:
-- Resource-based URLs (e.g., `/api/properties`, `/api/tenants`)
-- Standard HTTP methods (GET, POST, PUT, DELETE)
-- JSON request and response bodies
-- Authentication via session cookies
-- Error responses with appropriate status codes and messages
+2. **Service Layer**
+   - User service
+   - Property service
+   - Tenant service
+   - Document service
+   - Financial service
+   - Integration services
+
+3. **Data Layer**
+   - PostgreSQL database
+   - Drizzle ORM
+   - Data validation with Zod
+
+## Integration Architecture
+
+The system integrates with the following external services:
+
+1. **DoorLoop API**
+   - Property data synchronization
+   - Tenant information
+   - Lease details
+
+2. **Wave API**
+   - Financial transaction data
+   - Invoice management
+   - Account balances
+
+3. **HubSpot API**
+   - CRM functionality
+   - Contact management
+   - Lead tracking
+
+4. **Microsoft 365 API**
+   - Document storage
+   - Email integration
+   - Calendar functionality
+
+5. **Mercury Bank API**
+   - Financial accounts
+   - Transaction data
+   - Payment processing
 
 ## Data Flow
 
-1. **User Authentication**:
-   - User logs in with username/password
-   - Server authenticates and establishes session
-   - Client stores session cookie
+1. **User Authentication**
+   - User logs in with credentials
+   - System validates and issues JWT token
+   - Token is used for subsequent requests
 
-2. **Data Retrieval**:
-   - Client requests data via React Query
-   - Server validates request and retrieves data from database or external APIs
-   - Client receives data and displays it
+2. **Property Management**
+   - Properties synchronized from DoorLoop
+   - Local data enriched with custom fields
+   - Changes can be pushed back to DoorLoop
 
-3. **Data Mutation**:
-   - Client sends data updates via React Query mutations
-   - Server validates input and updates database
-   - Server returns success/failure
-   - Client updates UI based on response
+3. **Financial Tracking**
+   - Transactions pulled from Wave and Mercury Bank
+   - Data normalized and merged
+   - Reports generated from combined data
 
-4. **External API Integration**:
-   - Client requests data from external APIs
-   - Server proxies requests to external APIs using stored credentials
-   - Server transforms responses to match internal data models
-   - Client displays integrated data
+4. **Document Management**
+   - Documents stored in Microsoft 365
+   - Metadata stored in local database
+   - Access controlled by user permissions
+
+## Security Architecture
+
+1. **Authentication**
+   - Password hashing with bcrypt
+   - JWT for session management
+   - Role-based access control
+
+2. **API Security**
+   - HTTPS for all communications
+   - API key storage in secure environment variables
+   - Request validation
+
+3. **Data Privacy**
+   - PII encryption
+   - Data access auditing
+   - Compliance with privacy regulations
 
 ## Deployment Architecture
 
-The application is deployed on Replit with:
-- Node.js Express server
-- Vite for frontend bundling
-- PostgreSQL database
-- Static IP proxy for secure API connections
-- Environment variables for sensitive configuration
+The application is deployed on Replit with the following considerations:
+
+1. **Infrastructure**
+   - Node.js runtime environment
+   - PostgreSQL database
+   - Static file serving
+
+2. **Performance**
+   - Server-side caching
+   - Client-side query caching
+   - Optimized API calls
+
+3. **Monitoring**
+   - Error tracking
+   - Performance monitoring
+   - Usage analytics
+
+## Future Architectural Considerations
+
+1. **Scalability**
+   - Microservices decomposition
+   - Serverless functions for specific workloads
+   - Horizontal scaling
+
+2. **Advanced Features**
+   - Real-time notifications
+   - Machine learning for maintenance prediction
+   - Advanced reporting engine
+
+3. **Mobile Architecture**
+   - Progressive Web App (PWA)
+   - Responsive design
+   - Mobile-specific features
+
+---
+
+*Last updated: April 15, 2025*
